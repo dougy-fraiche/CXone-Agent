@@ -94,7 +94,7 @@ export function AgentSidebarRail({ activeNavId, onNavSelect }: AgentSidebarRailP
   const visibleItems = items.filter((i) => i.enabled);
 
   return (
-    <TooltipProvider delay={300}>
+    <TooltipProvider delayDuration={300}>
       {/* Single top-aligned column — Settings/Reporting/More flow directly below WEM */}
       <div className="flex flex-col pt-2 px-2 gap-0">
         {/* Customizable nav items */}
@@ -223,7 +223,7 @@ function SortableCustomizeItem({
       <Switch
         checked={item.enabled}
         onCheckedChange={() => onToggle(item.id)}
-        size="sm"
+        className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3"
       />
     </div>
   );

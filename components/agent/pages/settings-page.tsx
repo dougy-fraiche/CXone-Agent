@@ -1,6 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Settings,
   Volume2,
@@ -38,6 +50,8 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const CARD =
   "flex flex-col h-full bg-white border border-[#D2D8DB] rounded-lg shadow-sm overflow-hidden";
@@ -99,10 +113,32 @@ const SETTING_TABS = [
 ];
 
 /* ─── Tab 1: Login & Voice Preferences ────────────────────────────────────── */
+const RING_OPTIONS = [
+  { value: "ring1", label: "Ring 1", src: "/audio/ring-1.wav" },
+  { value: "ring2", label: "Ring 2", src: "/audio/ring-2.wav" },
+  { value: "ring3", label: "Ring 3", src: "/audio/ring-3.wav" },
+];
+const RING_SRC_MAP: Record<string, string> = Object.fromEntries(
+  RING_OPTIONS.map((o) => [o.value, o.src])
+);
+
 function LoginVoiceTab() {
   const [volume, setVolume] = useState([65]);
   const [autoAccept, setAutoAccept] = useState(false);
   const [ringtone, setRingtone] = useState("ring1");
+  const ringAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  function playRing(value: string) {
+    const src = RING_SRC_MAP[value];
+    if (!src) return;
+    if (ringAudioRef.current) {
+      ringAudioRef.current.pause();
+      ringAudioRef.current.currentTime = 0;
+    }
+    const audio = new Audio(src);
+    ringAudioRef.current = audio;
+    audio.play().catch(() => {});
+  }
   const [secondaryDevice, setSecondaryDevice] = useState("none");
   const [delaySeconds, setDelaySeconds] = useState("none");
   const [noiseMicOn, setNoiseMicOn] = useState(true);
@@ -140,21 +176,28 @@ function LoginVoiceTab() {
             </div>
 
             {/* Ringtone */}
-            <div className="flex items-center gap-2">
-              <LabeledSelect
-                label="Ringtone"
-                value={ringtone}
-                onValueChange={setRingtone}
-                options={[
-                  { value: "ring1", label: "Ring 1" },
-                  { value: "ring2", label: "Ring 2" },
-                  { value: "ring3", label: "Ring 3" },
-                ]}
-                className="flex-1"
-              />
-              <button className="w-8 h-8 flex items-center justify-center rounded text-[#526b7a] hover:bg-[#F5F8FA] transition-colors shrink-0">
-                <Play className="w-4 h-4" />
-              </button>
+            <div className="flex flex-col gap-1.5">
+              <Label>Ringtone</Label>
+              <div className="flex items-center gap-2">
+                <Select value={ringtone} onValueChange={setRingtone}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue>
+                      {RING_OPTIONS.find((o) => o.value === ringtone)?.label}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RING_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={() => playRing(ringtone)}
+                  className="w-8 h-8 flex items-center justify-center rounded text-[#526b7a] hover:bg-[#F5F8FA] transition-colors shrink-0"
+                >
+                  <Play className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -163,46 +206,52 @@ function LoginVoiceTab() {
         <div>
           <SectionLabel>Secondary Ringer</SectionLabel>
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <LabeledSelect
-                label="Secondary Device"
-                value={secondaryDevice}
-                onValueChange={setSecondaryDevice}
-                options={[
-                  { value: "none", label: "None" },
-                  { value: "device1", label: "Device 1" },
-                ]}
-                className="flex-1"
-              />
-              <BellOff className="w-4 h-4 text-[#B0BDCA] shrink-0" />
+            <div className="flex flex-col gap-1.5">
+              <Label>Secondary Device</Label>
+              <div className="flex items-center gap-2">
+                <Select value={secondaryDevice} onValueChange={setSecondaryDevice}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="device1">Device 1</SelectItem>
+                  </SelectContent>
+                </Select>
+                <BellOff className="w-4 h-4 text-[#B0BDCA] shrink-0" />
+              </div>
             </div>
-            <LabeledSelect
-              label="Delay Seconds"
-              value={delaySeconds}
-              onValueChange={setDelaySeconds}
-              options={[
-                { value: "none", label: "None" },
-                { value: "5", label: "5 seconds" },
-                { value: "10", label: "10 seconds" },
-              ]}
-            />
+            <div className="flex flex-col gap-1.5">
+              <Label>Delay Seconds</Label>
+              <Select value={delaySeconds} onValueChange={setDelaySeconds}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="5">5 seconds</SelectItem>
+                  <SelectItem value="10">10 seconds</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
         {/* Noise Cancellation */}
         <div>
           <SectionLabel>Noise Cancellation</SectionLabel>
-          <div className="flex items-start gap-2 mb-4 text-[12px] text-[#526b7a]">
-            <Info className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              Note: To use the Noise Cancellation feature, it is recommended to
+          <Alert className="mb-4 border-blue-200 bg-blue-50 text-blue-800 [&>svg]:text-blue-500">
+            <Info />
+            <AlertTitle>Note</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              To use the Noise Cancellation feature, it is recommended to
               install the CXone Noise Cancellation Extension from the Chrome Web
               Store.{" "}
-              <span className="text-[#007AB8] cursor-pointer">
+              <span className="text-blue-600 cursor-pointer hover:underline">
                 Click here for details
               </span>
-            </span>
-          </div>
+            </AlertDescription>
+          </Alert>
           <div className="flex flex-col gap-4">
             {/* Mic */}
             <div>
@@ -275,13 +324,17 @@ function LoginVoiceTab() {
           <p className="text-[13px] text-[#526b7a] mb-3">
             Any added devices will appear here.
           </p>
-          <LabeledSelect
-            label="Selected Devices"
-            value={selectedDevices}
-            onValueChange={setSelectedDevices}
-            options={[{ value: "none", label: "No Devices" }]}
-            className="max-w-[220px]"
-          />
+          <div className="flex flex-col gap-1.5 max-w-[220px]">
+            <Label>Selected Devices</Label>
+            <Select value={selectedDevices} onValueChange={setSelectedDevices}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Devices</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
@@ -296,11 +349,19 @@ const AV_ROWS = [
   { id: "end-chat", label: "End Chat or Call", tone: "tone4" },
 ];
 const TONE_OPTIONS = [
-  { value: "tone1", label: "Tone 1" },
-  { value: "tone2", label: "Tone 2" },
-  { value: "tone3", label: "Tone 3" },
-  { value: "tone4", label: "Tone 4" },
+  { value: "tone1", label: "Tone 1", src: "/audio/tone-1.wav" },
+  { value: "tone2", label: "Tone 2", src: "/audio/tone-2.wav" },
+  { value: "tone3", label: "Tone 3", src: "/audio/tone-3.wav" },
+  { value: "tone4", label: "Tone 4", src: "/audio/tone-4.wav" },
+  { value: "tone5", label: "Tone 5", src: "/audio/tone-5.wav" },
+  { value: "tone6", label: "Tone 6", src: "/audio/tone-6.wav" },
+  { value: "tone7", label: "Tone 7", src: "/audio/tone-7.wav" },
+  { value: "tone8", label: "Tone 8", src: "/audio/tone-8.wav" },
 ];
+
+const TONE_SRC_MAP: Record<string, string | null> = Object.fromEntries(
+  TONE_OPTIONS.map((o) => [o.value, o.src])
+);
 
 function AVNotificationsTab() {
   const [audioToggles, setAudioToggles] = useState<Record<string, boolean>>(
@@ -313,8 +374,22 @@ function AVNotificationsTab() {
     Object.fromEntries(AV_ROWS.map((r) => [r.id, false]))
   );
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  function playTone(toneValue: string) {
+    const src = TONE_SRC_MAP[toneValue];
+    if (!src) return;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    const audio = new Audio(src);
+    audioRef.current = audio;
+    audio.play().catch(() => {/* ignore autoplay policy errors */});
+  }
+
   return (
-    <div className="flex gap-12 px-6 py-6 overflow-y-auto h-full">
+    <div className="flex gap-16 px-6 py-6 overflow-y-auto h-full">
       {/* Audio Notifications */}
       <div className="flex-1">
         <h3 className="text-[16px] font-semibold text-[#005C99] mb-5">
@@ -322,28 +397,50 @@ function AVNotificationsTab() {
         </h3>
         <div className="flex flex-col gap-4">
           {AV_ROWS.map((row) => (
-            <div key={row.id} className="flex items-center gap-3">
-              <span className="text-[13px] text-[#333] w-40 shrink-0">
+            <div key={row.id} className="flex items-center gap-4">
+              {/* Row label */}
+              <Label className="w-40 shrink-0 font-normal">
                 {row.label}
-              </span>
+              </Label>
+
+              {/* Toggle */}
               <Switch
                 checked={audioToggles[row.id]}
                 onCheckedChange={(v) =>
                   setAudioToggles((p) => ({ ...p, [row.id]: v }))
                 }
               />
-              <LabeledSelect
-                label={row.label}
+
+              {/* Tone select — plain shadcn Select, no floating label */}
+              <Select
                 value={tones[row.id]}
                 onValueChange={(v) =>
                   setTones((p) => ({ ...p, [row.id]: v }))
                 }
-                options={TONE_OPTIONS}
-                className="w-36"
-              />
-              <button className="w-7 h-7 flex items-center justify-center rounded text-[#526b7a] hover:bg-[#F5F8FA] transition-colors shrink-0">
-                <Volume2 className="w-4 h-4" />
-              </button>
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue>
+                    {TONE_OPTIONS.find((o) => o.value === tones[row.id])?.label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {TONE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Play preview button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => playTone(tones[row.id])}
+                disabled={!TONE_SRC_MAP[tones[row.id]]}
+              >
+                <Play className="w-4 h-4" />
+              </Button>
             </div>
           ))}
         </div>
@@ -356,10 +453,10 @@ function AVNotificationsTab() {
         </h3>
         <div className="flex flex-col gap-4">
           {AV_ROWS.map((row) => (
-            <div key={row.id} className="flex items-center gap-3 h-9">
-              <span className="text-[13px] text-[#333] w-40 shrink-0">
+            <div key={row.id} className="flex items-center gap-4">
+              <Label className="w-40 shrink-0 font-normal">
                 {row.label}
-              </span>
+              </Label>
               <Switch
                 checked={visualToggles[row.id]}
                 onCheckedChange={(v) =>
@@ -821,77 +918,145 @@ const PRIORITY_OPTIONS = [
   { value: "critical", label: "Critical" },
 ];
 
+const reportIssueSchema = z.object({
+  category: z.string().min(1, "Please select a category"),
+  priority: z.string().min(1, "Please select a priority"),
+  comment: z.string().min(10, "Comment must be at least 10 characters"),
+  includeLog: z.boolean(),
+});
+
+type ReportIssueValues = z.infer<typeof reportIssueSchema>;
+
 function ReportIssueTab() {
-  const [category, setCategory] = useState("");
-  const [priority, setPriority] = useState("");
-  const [comment, setComment] = useState("");
-  const [includeLog, setIncludeLog] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const form = useForm<ReportIssueValues>({
+    resolver: zodResolver(reportIssueSchema),
+    defaultValues: { category: "", priority: "", comment: "", includeLog: false },
+  });
+
+  async function onSubmit(_values: ReportIssueValues) {
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 1200));
+    setSubmitting(false);
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <div className="px-6 py-6 flex flex-col items-center justify-center h-full gap-3 text-center">
+        <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+          <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-[15px] font-bold text-[#333]">Report Submitted</p>
+        <p className="text-[13px] text-[#526b7a] max-w-xs">Thank you. Our support team will review your report shortly.</p>
+        <Button variant="outline" size="sm" onClick={() => { setSubmitted(false); form.reset(); }}>
+          Submit another
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="px-6 py-6 overflow-y-auto h-full flex flex-col gap-6">
-      <p className="text-[15px] font-bold text-[#333]">Report an Issue</p>
+    <div className="px-6 py-6 overflow-y-auto h-full">
+      <p className="text-[15px] font-bold text-[#333] mb-6">Report an Issue</p>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
 
-      {/* Category */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-[11px] font-bold text-[#333] uppercase tracking-wide">
-          CATEGORY <span className="text-red-500">*</span>
-        </label>
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORY_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Priority */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-[11px] font-bold text-[#333] uppercase tracking-wide">
-          PRIORITY <span className="text-red-500">*</span>
-        </label>
-        <Select value={priority} onValueChange={setPriority}>
-          <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent>
-            {PRIORITY_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Comment */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-[11px] font-bold text-[#333] uppercase tracking-wide">
-          COMMENT <span className="text-red-500">*</span>
-        </label>
-        <Textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="w-[300px] h-44"
-        />
-      </div>
-
-      {/* Footer row */}
-      <div className="flex items-center gap-8">
-        <label className="flex items-center gap-2 cursor-pointer text-[13px] text-[#526b7a]">
-          <Checkbox
-            checked={includeLog}
-            onCheckedChange={(v) => setIncludeLog(v === true)}
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem className="w-[300px]">
+                <FormLabel className="text-[11px] font-bold text-[#333] uppercase tracking-wide">
+                  Category <span className="text-red-500">*</span>
+                </FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CATEGORY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          Include Event Log
-        </label>
-        <Button>Send</Button>
-      </div>
+
+          <FormField
+            control={form.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem className="w-[300px]">
+                <FormLabel className="text-[11px] font-bold text-[#333] uppercase tracking-wide">
+                  Priority <span className="text-red-500">*</span>
+                </FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="comment"
+            render={({ field }) => (
+              <FormItem className="w-[300px]">
+                <FormLabel className="text-[11px] font-bold text-[#333] uppercase tracking-wide">
+                  Comment <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Textarea {...field} className="h-44 resize-none" placeholder="Describe the issue…" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="includeLog"
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-2">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel className="text-[13px] text-[#526b7a] font-normal cursor-pointer !mt-0">
+                  Include Event Log
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+
+          <div>
+            <Button type="submit" disabled={submitting} className="min-w-[80px]">
+              {submitting ? <Spinner className="w-4 h-4" /> : "Send"}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
@@ -903,7 +1068,7 @@ export function SettingsPage({ className }: { className?: string }) {
   return (
     <div className={cn(CARD, className)}>
       {/* Page header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#D2D8DB] shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 shrink-0">
         <Settings className="w-4 h-4 text-[#005C99] shrink-0" />
         <span className="text-[15px] font-semibold text-[#333]">Settings</span>
       </div>

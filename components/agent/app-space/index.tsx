@@ -59,7 +59,7 @@ export function AppSpace({ contact, className }: AppSpaceProps) {
       </div>
 
       {/* Icon tab bar */}
-      <TooltipProvider delay={300}>
+      <TooltipProvider delayDuration={300}>
         <div className="flex items-center border-b border-[#D2D8DB] px-1 shrink-0 bg-white">
           {appTabs.map((item, i) => {
             if (item.type === "separator") {

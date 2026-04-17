@@ -6,7 +6,7 @@ const CARD = "flex flex-col h-full bg-white border border-[#D2D8DB] rounded-lg s
 export function ContactHistoryPage({ className }: { className?: string }) {
   return (
     <div className={cn(CARD, className)}>
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#D2D8DB] shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 shrink-0">
         <History className="w-4 h-4 text-[#005C99]" />
         <span className="text-[15px] font-semibold text-[#333]">Contact History</span>
       </div>

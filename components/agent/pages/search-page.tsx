@@ -22,6 +22,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 const CARD = "flex flex-col h-full bg-white border border-[#D2D8DB] rounded-lg shadow-sm overflow-hidden";
@@ -142,24 +150,6 @@ interface MultiComboboxProps {
 
 function MultiCombobox({ options, selected, onSelectedChange, placeholder = "Select…" }: MultiComboboxProps) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const filtered = options.filter((o) =>
-    o.label.toLowerCase().includes(search.toLowerCase())
-  );
-
-  useEffect(() => {
-    function handler(e: PointerEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-        setSearch("");
-      }
-    }
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, []);
 
   function toggle(value: string) {
     onSelectedChange(
@@ -170,84 +160,72 @@ function MultiCombobox({ options, selected, onSelectedChange, placeholder = "Sel
   }
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Field */}
-      <div
-        onClick={() => { setOpen(true); inputRef.current?.focus(); }}
-        className={cn(
-          "flex flex-wrap items-center gap-1 min-h-9 w-full rounded-md border bg-background px-2.5 py-1.5 text-sm cursor-text transition-colors",
-          open
-            ? "border-ring ring-2 ring-ring/20 outline-none"
-            : "border-input hover:border-ring/50"
-        )}
-      >
-        {/* Chips */}
-        {selected.map((val) => {
-          const label = options.find((o) => o.value === val)?.label ?? val;
-          return (
-            <span
-              key={val}
-              className="flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-medium rounded px-1.5 py-0.5 shrink-0"
-            >
-              {label}
-              <button
-                onPointerDown={(e) => { e.stopPropagation(); toggle(val); }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          );
-        })}
-
-        {/* Search input */}
-        <input
-          ref={inputRef}
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          placeholder={selected.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[40px] bg-transparent outline-none placeholder:text-muted-foreground text-sm"
-        />
-
-        {/* Chevron */}
-        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-auto pointer-events-none" />
-      </div>
-
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-md border bg-popover shadow-md overflow-hidden max-h-48 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">No results found</p>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex flex-wrap items-center gap-1 min-h-9 w-full rounded-md border bg-background px-2.5 py-1.5 text-sm cursor-pointer transition-colors text-left",
+            open
+              ? "border-ring ring-1 ring-ring outline-none"
+              : "border-input hover:border-ring/50"
+          )}
+        >
+          {selected.length === 0 ? (
+            <span className="text-muted-foreground flex-1">{placeholder}</span>
           ) : (
-            filtered.map((opt) => {
-              const isSelected = selected.includes(opt.value);
+            selected.map((val) => {
+              const label = options.find((o) => o.value === val)?.label ?? val;
               return (
-                <button
-                  key={opt.value}
-                  onPointerDown={(e) => { e.preventDefault(); toggle(opt.value); }}
-                  className={cn(
-                    "flex items-center gap-2.5 w-full text-left px-3 py-2 text-sm transition-colors",
-                    isSelected ? "bg-accent" : "hover:bg-accent"
-                  )}
+                <span
+                  key={val}
+                  className="flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-medium rounded px-1.5 py-0.5 shrink-0"
                 >
-                  <div className={cn(
-                    "flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors",
-                    isSelected
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "border-input"
-                  )}>
-                    {isSelected && <Check className="w-3 h-3" />}
-                  </div>
-                  {opt.label}
-                </button>
+                  {label}
+                  <span
+                    role="button"
+                    onPointerDown={(e) => { e.stopPropagation(); toggle(val); }}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </span>
+                </span>
               );
             })
           )}
-        </div>
-      )}
-    </div>
+          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-auto" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+        <Command>
+          <CommandInput placeholder="Search…" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((opt) => {
+                const isSelected = selected.includes(opt.value);
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={opt.label}
+                    onSelect={() => toggle(opt.value)}
+                  >
+                    <div className={cn(
+                      "flex items-center justify-center w-4 h-4 rounded border shrink-0 transition-colors mr-2",
+                      isSelected
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-input"
+                    )}>
+                      {isSelected && <Check className="w-3 h-3" />}
+                    </div>
+                    {opt.label}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -282,9 +260,11 @@ function FilterPanel() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button variant="outline" />}>
-        <ListFilter className="w-4 h-4" />
-        Filters
+      <PopoverTrigger asChild>
+        <Button variant="outline">
+          <ListFilter className="w-4 h-4" />
+          Filters
+        </Button>
       </PopoverTrigger>
 
       <PopoverContent side="bottom" align="end" sideOffset={6} className="w-80 p-0 gap-0 overflow-hidden">
@@ -504,7 +484,7 @@ export function SearchPage({ className }: { className?: string }) {
     <div className={cn(CARD, className)}>
 
       {/* ── Page header ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#D2D8DB] shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 shrink-0">
         <Search className="w-4 h-4 text-[#005C99] shrink-0" />
         <span className="text-[15px] font-semibold text-[#333]">Search</span>
       </div>

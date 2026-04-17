@@ -102,6 +102,7 @@ export default function App() {
         minute: "2-digit",
       }),
     };
+    if (!activeContactId) return;
     setMessages((prev) => ({
       ...prev,
       [activeContactId]: [...(prev[activeContactId] ?? []), newMessage],

@@ -10,6 +10,17 @@ import {
   PhoneOutgoing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { PieChart, Pie, Cell } from "recharts";
 
 const CARD = "flex flex-col h-full bg-white border border-[#D2D8DB] rounded-lg shadow-sm overflow-hidden";
 
@@ -58,6 +69,18 @@ function TimePeriodSelector({
   );
 }
 
+const PRODUCTIVITY_DATA = [
+  { name: "Available",   value: 0,   color: "#22c55e" },
+  { name: "Working",     value: 0,   color: "#f59e0b" },
+  { name: "Unavailable", value: 100, color: "#ef4444" },
+];
+
+const PRODUCTIVITY_CHART_CONFIG = {
+  Available:   { label: "Available",   color: "#22c55e" },
+  Working:     { label: "Working",     color: "#f59e0b" },
+  Unavailable: { label: "Unavailable", color: "#ef4444" },
+};
+
 function ProductivityTab({ period, onPeriodChange }: { period: TimePeriod; onPeriodChange: (p: TimePeriod) => void }) {
   return (
     <div className="flex flex-col flex-1 overflow-auto">
@@ -67,96 +90,124 @@ function ProductivityTab({ period, onPeriodChange }: { period: TimePeriod; onPer
         <TimePeriodSelector period={period} onChange={onPeriodChange} />
       </div>
 
-      {/* Table header */}
-      <div className="flex items-center px-4 py-2 bg-[#ECF3F8] border-y border-[#D2D8DB] shrink-0">
-        <span className="flex-1 text-[12px] text-[#526b7a]">Agent states</span>
-        <span className="w-24 text-[12px] text-[#526b7a]">Time</span>
+      {/* Donut chart summary */}
+      <div className="flex items-center gap-6 px-4 pb-4 shrink-0">
+        <ChartContainer config={PRODUCTIVITY_CHART_CONFIG} className="h-[120px] w-[120px] shrink-0">
+          <PieChart>
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <Pie data={PRODUCTIVITY_DATA} dataKey="value" innerRadius={36} outerRadius={54} strokeWidth={2}>
+              {PRODUCTIVITY_DATA.map((entry) => (
+                <Cell key={entry.name} fill={entry.color} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        <div className="flex flex-col gap-2">
+          {PRODUCTIVITY_DATA.map((entry) => (
+            <div key={entry.name} className="flex items-center gap-2 text-sm">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+              <span className="text-muted-foreground">{entry.name}</span>
+              <span className="font-semibold ml-auto pl-4">{entry.value}%</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Available */}
-      <div className="flex items-center px-4 py-3 border-b border-[#D2D8DB]">
-        <div className="flex items-center gap-2 w-48 shrink-0">
-          <CircleCheck className="w-4 h-4 text-[#22c55e] shrink-0" />
-          <span className="text-[13px] font-semibold text-[#333]">Available (0%)</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-5 relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[#22c55e]" />
-          </div>
-        </div>
-        <span className="w-20 text-[13px] font-semibold text-[#333] shrink-0">00:00:00</span>
-      </div>
-      {/* Available — Team sub-row */}
-      <div className="flex items-center px-4 py-2 border-b border-[#D2D8DB] bg-[#fafafa]">
-        <div className="flex items-center gap-2 w-48 shrink-0 pl-6">
-          <span className="text-[12px] text-[#526b7a]">Team (0%)</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-4 relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 bg-[#86efac]" />
-          </div>
-        </div>
-        <span className="w-20 text-[12px] text-[#526b7a] shrink-0">00:00:00</span>
-      </div>
+      <div className="mx-4 border border-[#D2D8DB] rounded-md overflow-hidden shrink-0">
+      <Table>
+        <TableHeader className="bg-[#ECF3F8]">
+          <TableRow className="hover:bg-[#ECF3F8]">
+            <TableHead className="text-[#526b7a] w-48">Agent states</TableHead>
+            <TableHead className="text-[#526b7a]">{/* bar */}</TableHead>
+            <TableHead className="text-[#526b7a] text-right w-24">Time</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* Available */}
+          <TableRow>
+            <TableCell>
+              <div className="flex items-center gap-2 font-semibold">
+                <CircleCheck className="w-4 h-4 text-[#22c55e] shrink-0" />
+                Available (0%)
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="relative h-5">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[#22c55e]" />
+              </div>
+            </TableCell>
+            <TableCell className="text-right font-semibold">00:00:00</TableCell>
+          </TableRow>
+          {/* Available — Team */}
+          <TableRow className="bg-muted/30 hover:bg-muted/40">
+            <TableCell className="pl-8 text-muted-foreground text-xs">Team (0%)</TableCell>
+            <TableCell>
+              <div className="relative h-4">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 bg-[#86efac]" />
+              </div>
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground text-xs">00:00:00</TableCell>
+          </TableRow>
 
-      {/* Working */}
-      <div className="flex items-center px-4 py-3 border-b border-[#D2D8DB]">
-        <div className="flex items-center gap-2 w-48 shrink-0">
-          <Circle className="w-4 h-4 text-[#f59e0b] fill-[#f59e0b] shrink-0" />
-          <span className="text-[13px] font-semibold text-[#333]">Working (0%)</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-5 relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[#f59e0b]" />
-          </div>
-        </div>
-        <span className="w-20 text-[13px] font-semibold text-[#333] shrink-0">00:00:00</span>
-      </div>
-      {/* Working — Team sub-row */}
-      <div className="flex items-center px-4 py-2 border-b border-[#D2D8DB] bg-[#fafafa]">
-        <div className="flex items-center gap-2 w-48 shrink-0 pl-6">
-          <span className="text-[12px] text-[#526b7a]">Team (0%)</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-4 relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 bg-[#fcd34d]" />
-          </div>
-        </div>
-        <span className="w-20 text-[12px] text-[#526b7a] shrink-0">00:00:00</span>
-      </div>
+          {/* Working */}
+          <TableRow>
+            <TableCell>
+              <div className="flex items-center gap-2 font-semibold">
+                <Circle className="w-4 h-4 text-[#f59e0b] fill-[#f59e0b] shrink-0" />
+                Working (0%)
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="relative h-5">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[#f59e0b]" />
+              </div>
+            </TableCell>
+            <TableCell className="text-right font-semibold">00:00:00</TableCell>
+          </TableRow>
+          {/* Working — Team */}
+          <TableRow className="bg-muted/30 hover:bg-muted/40">
+            <TableCell className="pl-8 text-muted-foreground text-xs">Team (0%)</TableCell>
+            <TableCell>
+              <div className="relative h-4">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 bg-[#fcd34d]" />
+              </div>
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground text-xs">00:00:00</TableCell>
+          </TableRow>
 
-      {/* Unavailable */}
-      <div className="flex items-center px-4 py-3 border-b border-[#D2D8DB]">
-        <div className="flex items-center gap-2 w-48 shrink-0">
-          <MinusCircle className="w-4 h-4 text-[#ef4444] shrink-0" />
-          <span className="text-[13px] font-semibold text-[#333]">Unavailable (100%)</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-5 bg-[#ef4444] rounded-sm" />
-        </div>
-        <span className="w-20 text-[13px] font-semibold text-[#333] shrink-0">00:00:00</span>
-      </div>
-      {/* Unavailable — Unavailable sub-row */}
-      <div className="flex items-center px-4 py-2 border-b border-[#D2D8DB] bg-[#fafafa]">
-        <div className="flex items-center gap-2 w-48 shrink-0 pl-6">
-          <span className="text-[12px] text-[#526b7a]">Unavailable</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-4 relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 bg-[#fca5a5]" />
-          </div>
-        </div>
-        <span className="w-20 text-[12px] text-[#526b7a] shrink-0">00:00:00</span>
-      </div>
-      {/* Unavailable — Team sub-row */}
-      <div className="flex items-center px-4 py-2 border-b border-[#D2D8DB] bg-[#fafafa]">
-        <div className="flex items-center gap-2 w-48 shrink-0 pl-6">
-          <span className="text-[12px] text-[#526b7a]">Team (100%)</span>
-        </div>
-        <div className="flex-1 flex items-center gap-2 mx-4">
-          <div className="flex-1 h-4 bg-[#fca5a5] rounded-sm" />
-        </div>
-        <span className="w-20 text-[12px] text-[#526b7a] shrink-0">00:00:00</span>
+          {/* Unavailable */}
+          <TableRow>
+            <TableCell>
+              <div className="flex items-center gap-2 font-semibold">
+                <MinusCircle className="w-4 h-4 text-[#ef4444] shrink-0" />
+                Unavailable (100%)
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="h-5 bg-[#ef4444] rounded-sm" />
+            </TableCell>
+            <TableCell className="text-right font-semibold">00:00:00</TableCell>
+          </TableRow>
+          {/* Unavailable — Unavailable sub-row */}
+          <TableRow className="bg-muted/30 hover:bg-muted/40">
+            <TableCell className="pl-8 text-muted-foreground text-xs">Unavailable</TableCell>
+            <TableCell>
+              <div className="relative h-4">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 bg-[#fca5a5]" />
+              </div>
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground text-xs">00:00:00</TableCell>
+          </TableRow>
+          {/* Unavailable — Team */}
+          <TableRow className="bg-muted/30 hover:bg-muted/40">
+            <TableCell className="pl-8 text-muted-foreground text-xs">Team (100%)</TableCell>
+            <TableCell>
+              <div className="h-4 bg-[#fca5a5] rounded-sm" />
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground text-xs">00:00:00</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
       </div>
     </div>
   );
@@ -172,46 +223,45 @@ function PerformanceTab({ period, onPeriodChange }: { period: TimePeriod; onPeri
       </div>
 
       {/* Table */}
-      <div className="mx-4 border border-[#D2D8DB] rounded overflow-hidden shrink-0">
-        {/* Table header */}
-        <div className="grid grid-cols-4 border-b border-[#D2D8DB] bg-white">
-          <div className="px-4 py-3 text-[12px] text-[#526b7a]">Channel Type</div>
-          <div className="px-4 py-3 text-[12px] text-[#526b7a] text-center">You</div>
-          <div className="px-4 py-3 text-[12px] text-[#526b7a] text-center">Team</div>
-          <div className="px-4 py-3 text-[12px] text-[#526b7a] text-center">% of Team</div>
-        </div>
-
-        {/* Inbound */}
-        <div className="grid grid-cols-4 border-b border-[#D2D8DB]">
-          <div className="px-4 py-3 flex items-center gap-2">
-            <PhoneIncoming className="w-4 h-4 text-[#526b7a] shrink-0" />
-            <span className="text-[13px] text-[#333]">Inbound</span>
-          </div>
-          <div className="px-4 py-3 text-[13px] text-[#333] text-center">0</div>
-          <div className="px-4 py-3 text-[13px] text-[#333] text-center">0</div>
-          <div className="px-4 py-3 text-[13px] text-[#333] text-center">0%</div>
-        </div>
-
-        {/* Outbound */}
-        <div className="grid grid-cols-4 border-b border-[#D2D8DB]">
-          <div className="px-4 py-3 flex items-center gap-2">
-            <PhoneOutgoing className="w-4 h-4 text-[#526b7a] shrink-0" />
-            <span className="text-[13px] text-[#333]">Outbound</span>
-          </div>
-          <div className="px-4 py-3 text-[13px] text-[#333] text-center">0</div>
-          <div className="px-4 py-3 text-[13px] text-[#333] text-center">0</div>
-          <div className="px-4 py-3 text-[13px] text-[#333] text-center">0%</div>
-        </div>
-
-        {/* Overall */}
-        <div className="grid grid-cols-4 border-t-2 border-[#D2D8DB]">
-          <div className="px-4 py-3">
-            <span className="text-[13px] font-semibold text-[#333]">Overall</span>
-          </div>
-          <div className="px-4 py-3 text-[13px] font-semibold text-[#333] text-center">0</div>
-          <div className="px-4 py-3 text-[13px] font-semibold text-[#333] text-center">0</div>
-          <div className="px-4 py-3 text-[13px] font-semibold text-[#333] text-center">0%</div>
-        </div>
+      <div className="mx-4 border border-[#D2D8DB] rounded-md overflow-hidden shrink-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-[#526b7a]">Channel Type</TableHead>
+              <TableHead className="text-[#526b7a] text-center">You</TableHead>
+              <TableHead className="text-[#526b7a] text-center">Team</TableHead>
+              <TableHead className="text-[#526b7a] text-center">% of Team</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="flex items-center gap-2">
+                <PhoneIncoming className="w-4 h-4 text-[#526b7a] shrink-0" />
+                Inbound
+              </TableCell>
+              <TableCell className="text-center">0</TableCell>
+              <TableCell className="text-center">0</TableCell>
+              <TableCell className="text-center">0%</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="flex items-center gap-2">
+                <PhoneOutgoing className="w-4 h-4 text-[#526b7a] shrink-0" />
+                Outbound
+              </TableCell>
+              <TableCell className="text-center">0</TableCell>
+              <TableCell className="text-center">0</TableCell>
+              <TableCell className="text-center">0%</TableCell>
+            </TableRow>
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="font-semibold">Overall</TableCell>
+              <TableCell className="text-center font-semibold">0</TableCell>
+              <TableCell className="text-center font-semibold">0</TableCell>
+              <TableCell className="text-center font-semibold">0%</TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
       </div>
     </div>
   );
@@ -224,7 +274,7 @@ export function ReportingPage({ className }: { className?: string }) {
   return (
     <div className={cn(CARD, className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#D2D8DB] shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 shrink-0">
         <ChartColumnBig className="w-4 h-4 text-[#005C99]" />
         <span className="text-[15px] font-semibold text-[#333]">Reporting</span>
       </div>

@@ -1,12 +1,13 @@
 
-import { ChevronDown, ChevronRight, Trash2, CheckCircle2, Loader2, SendHorizontal, Bot, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, CheckCircle2, SendHorizontal, Bot, Sparkles } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Contact } from "@/lib/mock-data";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress, ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 
 interface AIPanelProps {
   contact: Contact;
@@ -401,7 +402,7 @@ function SuggestedNextStepsCard({ baseDelay = 0 }: { baseDelay?: number }) {
                       {step.status === "done" ? (
                         <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
                       ) : step.status === "running" ? (
-                        <Loader2 className="w-4 h-4 text-[#526b7a] shrink-0 animate-spin" />
+                        <Spinner className="w-4 h-4 text-[#526b7a] shrink-0" />
                       ) : (
                         <div className="w-4 h-4 rounded-full border border-[#C4D4DF] shrink-0" />
                       )}
