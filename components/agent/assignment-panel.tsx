@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface AssignmentPanelProps {
   contacts: Contact[];
-  activeContactId: string;
+  activeContactId: string | null;
   onContactSelect: (id: string) => void;
   className?: string;
 }

@@ -1,12 +1,13 @@
 
-import { ChevronDown, ChevronRight, Trash2, CheckCircle2, Loader2, SendHorizontal, Bot, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, CheckCircle2, SendHorizontal, Bot, Sparkles } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Contact } from "@/lib/mock-data";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress, ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 
 interface AIPanelProps {
   contact: Contact;
@@ -40,18 +41,19 @@ const cd = (childBase: number, n: number): string =>
   `${childBase + 150 + n * 80}ms`;
 
 /* ─── Root panel ─────────────────────────────────────────────────────────── */
-const CARD_RENDERERS = [
-  (d: number) => <CustomerProfileCard baseDelay={d} />,
-  (d: number) => <CustomerContextCard baseDelay={d} />,
-  (d: number) => <AttemptedResolutionCard baseDelay={d} />,
-  (d: number) => <SuggestedNextStepsCard baseDelay={d} />,
-];
 
 export function AIPanel({ contact, queries = [], className }: AIPanelProps) {
+  const cards = [
+    (d: number) => <CustomerProfileCard contact={contact} baseDelay={d} />,
+    (d: number) => <CustomerContextCard contact={contact} baseDelay={d} />,
+    (d: number) => <AttemptedResolutionCard baseDelay={d} />,
+    (d: number) => <SuggestedNextStepsCard baseDelay={d} />,
+  ];
+
   return (
     <div className={cn("h-full overflow-y-auto", className)}>
       <div className="flex flex-col gap-2 p-4">
-        {CARD_RENDERERS.map((render, i) => {
+        {cards.map((render, i) => {
           const delay = 2000 + i * 700;
           return (
             <div key={i} className="animate-card-in" style={{ animationDelay: `${delay}ms` }}>
@@ -70,10 +72,23 @@ export function AIPanel({ contact, queries = [], className }: AIPanelProps) {
   );
 }
 
+/* ─── Risk score helpers ──────────────────────────────────────────────────── */
+function riskTextColor(score: number): string {
+  if (score <= 40) return "text-green-600";
+  if (score <= 70) return "text-amber-500";
+  return "text-red-500";
+}
+function riskBarColor(score: number): string {
+  if (score <= 40) return "bg-green-500";
+  if (score <= 70) return "bg-amber-400";
+  return "bg-red-500";
+}
+
 /* ─── Customer Profile ───────────────────────────────────────────────────── */
-function CustomerProfileCard({ baseDelay = 0 }: { baseDelay?: number }) {
+function CustomerProfileCard({ contact, baseDelay = 0 }: { contact: Contact; baseDelay?: number }) {
   const [open, setOpen] = useState(true);
   const childBase = useChildDelay(baseDelay);
+  const { profile } = contact;
 
   return (
     <div className={BLUE_CARD}>
@@ -94,17 +109,17 @@ function CustomerProfileCard({ baseDelay = 0 }: { baseDelay?: number }) {
             style={{ animationDelay: cd(childBase, 0) }}
           >
             <div className="w-9 h-9 rounded-full bg-[#003D7A] flex items-center justify-center shrink-0">
-              <span className="text-[13px] font-bold text-white">MB</span>
+              <span className="text-[13px] font-bold text-white">{profile.initials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-[#191919] leading-tight">Marcus Bell</p>
+              <p className="text-[13px] font-bold text-[#191919] leading-tight">{contact.name}</p>
               <p className="text-[11px] text-[#526b7a] leading-tight mt-0.5">
-                Business Banking · 5 yrs tenure
+                {profile.accountType} · {profile.tenureYears} yr{profile.tenureYears !== 1 ? "s" : ""} tenure
               </p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-[10px] text-[#526b7a]">Balance</p>
-              <p className="text-[13px] font-semibold text-[#191919]">$1,240,800.00</p>
+              <p className="text-[13px] font-semibold text-[#191919]">{profile.balance}</p>
             </div>
           </div>
 
@@ -115,28 +130,44 @@ function CustomerProfileCard({ baseDelay = 0 }: { baseDelay?: number }) {
           >
             <div className="bg-white rounded-lg p-2.5 border border-[#C4DBF0]">
               <p className="text-[10px] text-[#526b7a] mb-1">Fraud Risk Score</p>
-              <p className="text-[15px] font-bold text-green-600 leading-tight">
-                34{" "}
+              <p className={cn("text-[15px] font-bold leading-tight", riskTextColor(profile.fraudRiskScore))}>
+                {profile.fraudRiskScore}{" "}
                 <span className="text-[11px] font-normal text-[#526b7a]">/ 100</span>
               </p>
               <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#E2E8F0] overflow-hidden">
-                <div className="h-full bg-green-500 rounded-full" style={{ width: "34%" }} />
+                <div
+                  className={cn("h-full rounded-full", riskBarColor(profile.fraudRiskScore))}
+                  style={{ width: `${profile.fraudRiskScore}%` }}
+                />
               </div>
             </div>
             <div className="bg-white rounded-lg p-2.5 border border-[#C4DBF0]">
               <p className="text-[10px] text-[#526b7a] mb-1">Prior Disputes</p>
-              <p className="text-[15px] font-bold text-[#191919] leading-tight">1</p>
-              <p className="text-[10px] text-[#526b7a] mt-0.5">Card: NOT blocked</p>
+              <p className="text-[15px] font-bold text-[#191919] leading-tight">{profile.priorDisputes}</p>
+              <p className="text-[10px] text-[#526b7a] mt-0.5">
+                Card: {profile.cardBlocked ? "BLOCKED" : "NOT blocked"}
+              </p>
             </div>
           </div>
 
           {/* Badges */}
           <div
-            className="flex items-center gap-1.5 animate-card-in"
+            className="flex items-center gap-1.5 flex-wrap animate-card-in"
             style={{ animationDelay: cd(childBase, 2) }}
           >
-            <Badge variant="outline" className="rounded-full">Premier</Badge>
-            <Badge className="rounded-full bg-green-50 text-green-700 border border-green-500 hover:bg-green-100">IVR Auth ✓</Badge>
+            {profile.badges.map((badge) => (
+              <Badge
+                key={badge.label}
+                variant="outline"
+                className={cn(
+                  "rounded-full",
+                  badge.type === "green" && "bg-green-50 text-green-700 border-green-500 hover:bg-green-100",
+                  badge.type === "red"   && "bg-red-50 text-red-600 border-red-400 hover:bg-red-100"
+                )}
+              >
+                {badge.label}
+              </Badge>
+            ))}
           </div>
         </div>
       )}
@@ -145,7 +176,7 @@ function CustomerProfileCard({ baseDelay = 0 }: { baseDelay?: number }) {
 }
 
 /* ─── Customer Context ───────────────────────────────────────────────────── */
-function CustomerContextCard({ baseDelay = 0 }: { baseDelay?: number }) {
+function CustomerContextCard({ contact, baseDelay = 0 }: { contact: Contact; baseDelay?: number }) {
   const childBase = useChildDelay(baseDelay);
 
   return (
@@ -158,8 +189,7 @@ function CustomerContextCard({ baseDelay = 0 }: { baseDelay?: number }) {
           className="text-[12px] text-[#333] leading-relaxed animate-card-in"
           style={{ animationDelay: cd(childBase, 0) }}
         >
-          Long-term client (5 years). Recurring subscription in good standing. No prior billing
-          disputes. Sentiment: Confused but cooperative.
+          {contact.profile.contextSummary}
         </p>
       </div>
     </div>
@@ -372,7 +402,7 @@ function SuggestedNextStepsCard({ baseDelay = 0 }: { baseDelay?: number }) {
                       {step.status === "done" ? (
                         <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
                       ) : step.status === "running" ? (
-                        <Loader2 className="w-4 h-4 text-[#526b7a] shrink-0 animate-spin" />
+                        <Spinner className="w-4 h-4 text-[#526b7a] shrink-0" />
                       ) : (
                         <div className="w-4 h-4 rounded-full border border-[#C4D4DF] shrink-0" />
                       )}

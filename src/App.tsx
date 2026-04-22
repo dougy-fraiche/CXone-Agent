@@ -4,6 +4,7 @@ import { AgentSidebarRail } from "@/components/agent/sidebar-rail";
 import { AssignmentPanel } from "@/components/agent/assignment-panel";
 import { InteractionSpace } from "@/components/agent/interaction-space";
 import { AppSpace } from "@/components/agent/app-space";
+import { NavRouter } from "@/components/agent/pages";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -14,40 +15,80 @@ import type { Message } from "@/lib/mock-data";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 
 const APP_SPACE_DEFAULT_PX = 360;
-const HANDLE_WIDTH_PX = 16; // w-4 = 1rem = 16px
+const PANEL_PADDING_PX = 32; // p-4 on both sides (16px × 2)
+const HANDLE_WIDTH_PX = 8;   // gap between panels
 
 export default function App() {
-  const [activeContactId, setActiveContactId] = useState("sarah-mitchell");
+  const [activeContactId, setActiveContactId] = useState<string | null>("sarah-mitchell");
+  const [activeNavId, setActiveNavId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, Message[]>>(mockMessages);
 
   const panelContainerRef = useRef<HTMLDivElement>(null);
   const appPanelRef = useRef<ImperativePanelHandle>(null);
+  /** Tracks the user's chosen pixel width for the app space panel. */
+  const appSpacePxRef = useRef(APP_SPACE_DEFAULT_PX);
+  /** Set to true before a programmatic resize so onLayout ignores it. */
+  const skipLayoutUpdateRef = useRef(false);
 
-  const activeContact =
-    mockContacts.find((c) => c.id === activeContactId) ?? mockContacts[0];
+  const activeContact = activeContactId
+    ? mockContacts.find((c) => c.id === activeContactId) ?? null
+    : null;
 
-  const activeMessages = messages[activeContactId] ?? [];
+  const activeMessages = activeContactId ? (messages[activeContactId] ?? []) : [];
 
-  /** Convert 360px to a percentage of the available panel group width. */
-  function calcDefaultPct(): number {
+  /** Convert a pixel width to a percentage of the available panel group width. */
+  function calcPctFromPx(px: number): number {
     const containerWidth = panelContainerRef.current?.getBoundingClientRect().width ?? 0;
-    if (!containerWidth) return 38; // fallback
-    // Subtract p-4 padding (16px × 2 sides) to get inner group width
-    const groupWidth = containerWidth - 32;
-    const available = groupWidth - HANDLE_WIDTH_PX;
-    return Math.round((APP_SPACE_DEFAULT_PX / available) * 1000) / 10; // 1dp
+    if (!containerWidth) return 38; // fallback before layout
+    const available = containerWidth - PANEL_PADDING_PX - HANDLE_WIDTH_PX;
+    return Math.round((px / available) * 1000) / 10; // 1 decimal place
   }
 
-  // Set App Space to exactly 360px once the panel group is mounted and laid out
+  /** Apply the stored pixel width as a percentage. */
+  function applyStoredPx() {
+    skipLayoutUpdateRef.current = true;
+    appPanelRef.current?.resize(calcPctFromPx(appSpacePxRef.current));
+    requestAnimationFrame(() => { skipLayoutUpdateRef.current = false; });
+  }
+
+  // On mount: set the panel to the default pixel width once layout is ready.
   useEffect(() => {
-    const id = setTimeout(() => {
-      appPanelRef.current?.resize(calcDefaultPct());
-    }, 0);
+    const id = setTimeout(applyStoredPx, 0);
     return () => clearTimeout(id);
   }, []);
 
+  // When the container changes size (window resize), reapply the stored pixel width.
+  useEffect(() => {
+    const el = panelContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(applyStoredPx);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  /** Called by ResizablePanelGroup whenever the layout changes. */
+  function handleLayout(sizes: number[]) {
+    if (skipLayoutUpdateRef.current) return;
+    // User dragged the handle — record the new pixel width of the app panel.
+    const containerWidth = panelContainerRef.current?.getBoundingClientRect().width ?? 0;
+    if (!containerWidth) return;
+    const available = containerWidth - PANEL_PADDING_PX - HANDLE_WIDTH_PX;
+    appSpacePxRef.current = Math.round((sizes[1] / 100) * available);
+  }
+
   function resetPanelLayout() {
-    appPanelRef.current?.resize(calcDefaultPct());
+    appSpacePxRef.current = APP_SPACE_DEFAULT_PX;
+    applyStoredPx();
+  }
+
+  function handleNavSelect(id: string | null) {
+    setActiveNavId(id);
+    if (id !== null) setActiveContactId(null);
+  }
+
+  function handleContactSelect(id: string) {
+    setActiveContactId(id);
+    setActiveNavId(null);
   }
 
   function handleSend(text: string) {
@@ -61,6 +102,7 @@ export default function App() {
         minute: "2-digit",
       }),
     };
+    if (!activeContactId) return;
     setMessages((prev) => ({
       ...prev,
       [activeContactId]: [...(prev[activeContactId] ?? []), newMessage],
@@ -75,9 +117,9 @@ export default function App() {
       {/* Body row — fills remaining height, never wraps */}
       <div className="flex flex-1 min-w-0 overflow-hidden">
 
-        {/* Icon rail — fixed 54px, never shrinks */}
-        <div className="relative w-[54px] shrink-0 border-r border-[#D2D8DB] bg-white">
-          <AgentSidebarRail />
+        {/* Icon rail — fixed 52px, never shrinks */}
+        <div className="relative w-[52px] shrink-0 border-r border-[#D2D8DB] bg-white">
+          <AgentSidebarRail activeNavId={activeNavId} onNavSelect={handleNavSelect} />
         </div>
 
         {/* Assignment panel — fixed 232px */}
@@ -85,39 +127,45 @@ export default function App() {
           <AssignmentPanel
             contacts={mockContacts}
             activeContactId={activeContactId}
-            onContactSelect={setActiveContactId}
+            onContactSelect={handleContactSelect}
             className="h-full"
           />
         </div>
 
-        {/* Resizable panels */}
+        {/* Main content: nav page OR resizable panels */}
         <div ref={panelContainerRef} className="flex-1 min-w-0 overflow-hidden p-4">
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="h-full"
-          >
-            <ResizablePanel minSize={25}>
-              <InteractionSpace
-                contact={activeContact}
-                messages={activeMessages}
-                onSend={handleSend}
-                className="h-full"
-              />
-            </ResizablePanel>
-
-            <ResizableHandle
-              withHandle
-              onDoubleClick={resetPanelLayout}
-            />
-
-            <ResizablePanel
-              ref={appPanelRef}
-              defaultSize={38}
-              minSize={15}
+          {activeNavId ? (
+            <NavRouter navId={activeNavId} className="h-full" />
+          ) : activeContact ? (
+            <ResizablePanelGroup
+              direction="horizontal"
+              className="h-full"
+              onLayout={handleLayout}
             >
-              <AppSpace contact={activeContact} className="h-full" />
-            </ResizablePanel>
-          </ResizablePanelGroup>
+              <ResizablePanel minSize={25}>
+                <InteractionSpace
+                  key={activeContact.id}
+                  contact={activeContact}
+                  messages={activeMessages}
+                  onSend={handleSend}
+                  className="h-full"
+                />
+              </ResizablePanel>
+
+              <ResizableHandle
+                withHandle
+                onDoubleClick={resetPanelLayout}
+              />
+
+              <ResizablePanel
+                ref={appPanelRef}
+                defaultSize={38}
+                minSize={15}
+              >
+                <AppSpace key={activeContact.id} contact={activeContact} className="h-full" />
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : null}
         </div>
       </div>
     </div>

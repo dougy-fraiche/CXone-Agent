@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, History, Search, LayoutList, BookUser, Ellipsis, Atom, Contact, CalendarDays } from "lucide-react";
 import { AIPanel } from "./ai-panel";
 import { AppSearchBar } from "./search-bar";
+import { QueuePanel } from "./queue-panel";
 import {
   Tooltip,
   TooltipContent,
@@ -59,7 +60,7 @@ export function AppSpace({ contact, className }: AppSpaceProps) {
       </div>
 
       {/* Icon tab bar */}
-      <TooltipProvider delay={300}>
+      <TooltipProvider delayDuration={300}>
         <div className="flex items-center border-b border-[#D2D8DB] px-1 shrink-0 bg-white">
           {appTabs.map((item, i) => {
             if (item.type === "separator") {
@@ -103,7 +104,10 @@ export function AppSpace({ contact, className }: AppSpaceProps) {
             className="h-full"
           />
         )}
-        {activeTab !== "copilot" && (
+        {activeTab === "queue" && (
+          <QueuePanel className="h-full" />
+        )}
+        {activeTab !== "copilot" && activeTab !== "queue" && (
           <div className="flex items-center justify-center h-full text-[12px] text-[#526b7a]">
             {appTabs.find((t): t is Extract<TabItem, { type: "tab" }> => t.type === "tab" && t.id === activeTab)?.label} — coming soon
           </div>

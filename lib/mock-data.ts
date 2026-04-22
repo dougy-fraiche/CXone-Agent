@@ -1,6 +1,24 @@
 export type Channel = "webchat" | "phone" | "email" | "facebook" | "sms" | "twitter";
 export type ContactStatus = "active" | "waiting" | "hold";
 
+export interface ContactBadge {
+  label: string;
+  /** "default" = outline only; "green" = light green bg + green border; "red" = light red bg + red border */
+  type: "default" | "green" | "red";
+}
+
+export interface CustomerProfile {
+  initials: string;
+  accountType: string;
+  tenureYears: number;
+  balance: string;
+  fraudRiskScore: number;
+  priorDisputes: number;
+  cardBlocked: boolean;
+  badges: ContactBadge[];
+  contextSummary: string;
+}
+
 export interface Contact {
   id: string;
   name: string;
@@ -10,6 +28,7 @@ export interface Contact {
   status: ContactStatus;
   unread: boolean;
   caseNumber: string;
+  profile: CustomerProfile;
 }
 
 export type MessageRole = "agent" | "customer";
@@ -32,6 +51,21 @@ export const mockContacts: Contact[] = [
     status: "active",
     unread: false,
     caseNumber: "22073579",
+    profile: {
+      initials: "SM",
+      accountType: "Personal Banking",
+      tenureYears: 3,
+      balance: "$8,420.50",
+      fraudRiskScore: 71,
+      priorDisputes: 2,
+      cardBlocked: true,
+      badges: [
+        { label: "Premier", type: "default" },
+        { label: "Card Blocked", type: "red" },
+      ],
+      contextSummary:
+        "3-year Premier client. Card currently blocked due to suspected fraudulent charges. Two prior disputes on record. Sentiment: Worried and seeking reassurance.",
+    },
   },
   {
     id: "maggie-wilson",
@@ -42,6 +76,20 @@ export const mockContacts: Contact[] = [
     status: "waiting",
     unread: true,
     caseNumber: "22073580",
+    profile: {
+      initials: "MW",
+      accountType: "Personal Banking",
+      tenureYears: 2,
+      balance: "$3,150.75",
+      fraudRiskScore: 28,
+      priorDisputes: 0,
+      cardBlocked: false,
+      badges: [
+        { label: "Standard", type: "default" },
+      ],
+      contextSummary:
+        "2-year client with a clean dispute history and account in good standing. Inquiring about a statement discrepancy. Sentiment: Curious and cooperative.",
+    },
   },
   {
     id: "peter-brier",
@@ -52,6 +100,21 @@ export const mockContacts: Contact[] = [
     status: "waiting",
     unread: false,
     caseNumber: "22073581",
+    profile: {
+      initials: "PB",
+      accountType: "Business Banking",
+      tenureYears: 7,
+      balance: "$245,000.00",
+      fraudRiskScore: 12,
+      priorDisputes: 1,
+      cardBlocked: false,
+      badges: [
+        { label: "Enterprise", type: "default" },
+        { label: "IVR Auth ✓", type: "green" },
+      ],
+      contextSummary:
+        "Long-standing business client (7 years). Interested in a plan upgrade. Account in excellent standing with strong payment history. Sentiment: Professional and motivated.",
+    },
   },
 ];
 
