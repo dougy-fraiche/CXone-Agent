@@ -416,7 +416,7 @@ export function ContactTile({ contact, isActive, onClick, onTransfer }: ContactT
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
       className={cn(
         "relative w-full text-left rounded transition-colors group cursor-pointer overflow-hidden",
-        "border-l-[3px]",
+        "border border-[#D2D8DB] border-l-[3px]",
         isActive
           ? "bg-[#EAF1F7] border-l-[#003D7A]"
           : "bg-white border-l-transparent hover:bg-[#F5F8FA] hover:border-l-[#D2D8DB]"

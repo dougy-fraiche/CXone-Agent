@@ -28,7 +28,6 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
-
 function StatusBubble({ isAvailable }: { isAvailable: boolean }) {
   return (
     <span
@@ -63,7 +62,6 @@ function StatusDropdown({
 
   return (
     <div className="absolute right-0 top-full mt-1.5 w-72 bg-white rounded-xl shadow-2xl border border-[#D2D8DB] z-[100] overflow-hidden">
-      {/* Go Available — only shown when not already available */}
       {!isAvailable && (
         <div className="px-3 pt-3 pb-2">
           <Button variant="outline" className="w-full" onClick={onGoAvailable}>
@@ -75,7 +73,6 @@ function StatusDropdown({
         </div>
       )}
 
-      {/* Search */}
       <div className={cn("px-3 pb-2", isAvailable && "pt-3")}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -89,7 +86,6 @@ function StatusDropdown({
         </div>
       </div>
 
-      {/* Status list */}
       <div className="pb-1">
         <p className="px-3 py-1 text-xs text-muted-foreground">
           All Codes ({filtered.length})
@@ -106,7 +102,6 @@ function StatusDropdown({
         ))}
       </div>
 
-      {/* Log out */}
       <div className="border-t border-[#D2D8DB]">
         <button className="w-full flex items-center justify-center gap-2 py-2 text-sm text-foreground hover:bg-muted transition-colors">
           <LogOut className="w-4 h-4 text-muted-foreground" />
@@ -138,8 +133,6 @@ export function TopNav({ className }: TopNavProps) {
     setDropdownOpen(false);
   }, [setStatus]);
 
-  // Hover in / out with a small grace window so moving into the dropdown
-  // doesn't immediately close it.
   function handleMouseEnter() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setDropdownOpen(true);
@@ -149,23 +142,21 @@ export function TopNav({ className }: TopNavProps) {
     closeTimer.current = setTimeout(() => setDropdownOpen(false), 120);
   }
 
+  // elapsed is kept in scope for the dropdown's sr-only label
+  void elapsed;
+
   return (
     <header
       className={cn(
         "relative flex items-center justify-between px-4 h-14 shrink-0 z-50 w-full",
-        "bg-[var(--nav-header)] shadow-sm",
+        "bg-[#f6f7f9]",
         className
       )}
     >
       {/* Left: App branding */}
       <div className="flex items-center gap-2 shrink-0">
         <AppIcon />
-        <span className="text-white font-semibold text-base tracking-wide">Agent</span>
-      </div>
-
-      {/* Center: CXone Mpower branding */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-        <CXoneBranding />
+        <span className="text-[#1F2933] font-bold text-[15px] leading-none px-2 py-1">Agent Workspace</span>
       </div>
 
       {/* Right: controls */}
@@ -174,21 +165,21 @@ export function TopNav({ className }: TopNavProps) {
         {/* Help */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button className="p-2 rounded hover:bg-white/10 text-white transition-colors">
-              <HelpCircle className="w-5 h-5" />
+            <button className="p-2 rounded hover:bg-gray-200 text-[#5B6770] transition-colors">
+              <HelpCircle className="w-5 h-5" strokeWidth={1.75} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Open help center in new window</TooltipContent>
         </Tooltip>
 
-        <div className="w-px h-8 bg-white/30 mx-1" />
-
         {/* Notifications */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button className="relative p-2 rounded hover:bg-white/10 text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[var(--nav-header)]" />
+            <button className="relative p-2 rounded hover:bg-gray-200 text-[#5B6770] transition-colors">
+              <Bell className="w-5 h-5" strokeWidth={1.75} />
+              <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                <span className="text-[9px] font-semibold text-white leading-none">5</span>
+              </span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Notifications</TooltipContent>
@@ -201,10 +192,8 @@ export function TopNav({ className }: TopNavProps) {
               disabled={legConnecting}
               onClick={() => {
                 if (legConnected) {
-                  // Disconnect immediately
                   setLegConnected(false);
                 } else {
-                  // Show 500ms connecting animation then flip to connected
                   setLegConnecting(true);
                   setTimeout(() => {
                     setLegConnecting(false);
@@ -213,13 +202,13 @@ export function TopNav({ className }: TopNavProps) {
                   }, 1000);
                 }
               }}
-              className="p-2 rounded hover:bg-white/10 text-white transition-colors disabled:pointer-events-none"
+              className="p-2 rounded hover:bg-gray-200 text-[#5B6770] transition-colors disabled:pointer-events-none"
             >
               {legConnecting
                 ? <Loader2 className="w-5 h-5 animate-spin" />
                 : legConnected
-                  ? <Link2   className="w-5 h-5" />
-                  : <Unlink2 className="w-5 h-5" />}
+                  ? <Link2   className="w-5 h-5" strokeWidth={1.75} />
+                  : <Unlink2 className="w-5 h-5" strokeWidth={1.75} />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-center leading-snug">
@@ -233,43 +222,31 @@ export function TopNav({ className }: TopNavProps) {
           </TooltipContent>
         </Tooltip>
 
-        <div className="w-px h-8 bg-white/30 mx-1" />
-
         {/* ── Agent status trigger + dropdown ── */}
         <div
-          className="relative"
+          className="relative ml-1"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Trigger — always avatar + badge + status label + timer */}
-          <div className="flex items-center gap-2 px-2 py-1 rounded cursor-pointer select-none hover:bg-white/10 transition-colors">
+          <div className="flex items-center gap-2 p-1 rounded-full cursor-pointer select-none hover:bg-gray-200 transition-colors">
             <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
-                <span className="text-sm font-semibold text-[var(--nav-header)] leading-none">
+              <div className="w-8 h-8 rounded-full bg-[#D8DEE3] flex items-center justify-center shrink-0">
+                <span className="text-[12px] font-semibold text-[#4A5560] leading-none">
                   {AGENT_INITIALS}
                 </span>
               </div>
-              {/* Status badge — green check when available, red minus otherwise */}
               <span
                 className={cn(
-                  "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--nav-header)] flex items-center justify-center",
+                  "absolute -bottom-0 -right-0 w-3 h-3 rounded-full border-2 border-white",
                   isAvailable ? "bg-green-500" : "bg-red-500"
                 )}
+                title={currentOption?.label ?? "Unavailable"}
               >
-                {isAvailable
-                  ? <Check className="w-2 h-2 text-white" strokeWidth={3} />
-                  : <Minus className="w-2 h-2 text-white" strokeWidth={3} />}
+                <span className="sr-only">{currentOption?.label ?? "Unavailable"} ({formatTime(elapsed)})</span>
               </span>
-            </div>
-            <div className="flex flex-col items-start leading-tight">
-              <span className="text-white text-xs font-semibold">
-                {currentOption?.label ?? "Unavailable"}
-              </span>
-              <span className="text-white/70 text-xs">({formatTime(elapsed)})</span>
             </div>
           </div>
 
-          {/* Dropdown panel — visible on hover */}
           {dropdownOpen && (
             <StatusDropdown
               isAvailable={isAvailable}
@@ -321,41 +298,6 @@ function AppIcon() {
           <stop/><stop offset="1" stopOpacity="0.25"/>
         </linearGradient>
       </defs>
-    </svg>
-  );
-}
-
-function CXoneBranding() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 1953 277.14"
-      height="20"
-      aria-label="CXone Mpower"
-      role="img"
-      style={{ display: "block" }}
-    >
-      <style>{`.cxone-logo { fill: #fff; }`}</style>
-      <g>
-        <g>
-          <path className="cxone-logo" d="M1122.16,178.19h-53.36c-1.44,0-2.7,1.02-2.96,2.44-2.47,13.59-7.12,24.42-13.94,32.51-7.69,9.1-18.56,13.65-32.63,13.65-10.83,0-20.13-3.31-27.92-9.93-7.79-6.62-13.8-15.96-18.02-28.01-4.22-12.06-6.33-26.36-6.33-42.9,0-16.07,2-30.26,6.01-42.55,4-12.29,9.95-21.86,17.86-28.72,7.9-6.85,17.48-10.28,28.74-10.28,12.77,0,23.16,4.26,31.17,12.76,7.01,7.46,11.87,17.46,14.57,29.99.3,1.38,1.53,2.35,2.94,2.35h53.16c1.89,0,3.3-1.72,2.96-3.58-5.29-28.91-16.13-51.27-32.55-67.06-17.21-16.54-41.29-24.82-72.24-24.82-22.52,0-42.1,5.44-58.77,16.31-16.67,10.88-29.5,26.18-38.48,45.92-8.98,19.74-13.47,42.97-13.47,69.68s4.71,51.24,14.12,70.74c9.42,19.5,22.4,34.46,38.96,44.86,16.56,10.4,35.44,15.6,56.66,15.6,20.56,0,38.2-3.9,52.92-11.7,14.72-7.8,26.62-19.09,35.72-33.86,8.52-13.85,14.48-30.46,17.86-49.83.32-1.85-1.08-3.56-2.96-3.56Z"/>
-          <path className="cxone-logo" d="M1324.25,19.71h-53.45c-1.07,0-2.06.57-2.6,1.5l-41.34,71c-.39.67-1.35.67-1.74,0l-41.34-71c-.54-.93-1.53-1.5-2.6-1.5h-53.45c-2.32,0-3.77,2.52-2.6,4.53l70.36,120.84c.18.31.18.7,0,1.01l-70.36,120.84c-1.17,2.01.28,4.53,2.6,4.53h53.45c1.07,0,2.06-.57,2.6-1.5l41.34-71c.39-.67,1.35-.67,1.74,0l41.34,71c.54.93,1.53,1.5,2.6,1.5h53.45c2.32,0,3.77-2.52,2.6-4.53l-70.36-120.84c-.18-.31-.18-.7,0-1.01l70.36-120.84c1.17-2.01-.28-4.53-2.6-4.53Z"/>
-          <g>
-            <path className="cxone-logo" d="M1481.32,109.26c-5.5-4.29-12.94-6.44-22.32-6.44s-16.28,2.15-21.87,6.44c-5.59,4.3-9.64,9.74-12.13,16.33-2.5,6.59-3.75,13.48-3.75,20.67s1.25,14.28,3.75,20.67c2.5,6.4,6.54,11.59,12.13,15.58,5.59,4,12.88,5.99,21.87,5.99s16.58-1.99,22.17-5.99c5.59-3.99,9.63-9.24,12.13-15.73,2.5-6.49,3.75-13.33,3.75-20.52s-1.25-14.08-3.75-20.67c-2.5-6.59-6.49-12.03-11.99-16.33Z"/>
-            <g>
-              <path className="cxone-logo" d="M1843.55,102.82c-4.9-2.89-11.14-4.34-18.73-4.34s-13.93,1.5-19.03,4.49c-5.09,3-8.89,6.84-11.39,11.54-2.5,4.7-3.95,9.64-4.34,14.83h68.61c-.2-5.39-1.55-10.44-4.04-15.13-2.5-4.69-6.19-8.49-11.09-11.39Z"/>
-              <path className="cxone-logo" d="M1808.57,21.08h-336.41c-102.44,0-144.43,36.51-144.43,125.59s41.99,125.6,144.43,125.6h336.41c102.44,0,144.44-36.51,144.44-125.6s-41.99-125.59-144.44-125.59ZM1528.67,189.56c-6.49,12.09-15.58,21.32-27.27,27.72-11.69,6.4-25.62,9.59-41.8,9.59s-29.96-3.24-41.95-9.74c-11.98-6.49-21.27-15.78-27.86-27.86-6.59-12.08-9.89-26.41-9.89-43s3.34-31.61,10.04-43.9c6.69-12.29,16.03-21.72,28.02-28.32,11.99-6.59,25.77-9.89,41.35-9.89s29.86,3.4,41.65,10.19c11.78,6.79,20.97,16.28,27.57,28.46,6.59,12.19,9.89,26.77,9.89,43.75s-3.25,30.91-9.74,43ZM1717.57,224.76h-41.95v-81.8c0-4.79-.4-9.59-1.2-14.38-.8-4.79-2.25-9.19-4.34-13.18-2.1-3.99-5.05-7.19-8.84-9.59-3.8-2.4-8.79-3.6-14.98-3.6-7.99,0-14.68,2-20.07,5.99-5.39,4-9.39,9.39-11.99,16.18-2.6,6.79-3.9,14.28-3.9,22.47v77.9h-41.95V66.86h39.25l2.1,18.28c4.39-5.39,9.44-9.63,15.13-12.73,5.69-3.09,11.48-5.24,17.38-6.44,5.89-1.2,11.24-1.8,16.03-1.8,15.18,0,27.01,3.3,35.51,9.89,8.49,6.59,14.58,15.43,18.28,26.52,3.69,11.09,5.54,23.42,5.54,37v87.19ZM1898.54,150.91c-.2,2.6-.6,5.2-1.2,7.79h-108.16c.6,5.99,2.29,11.49,5.09,16.48,2.79,5,6.74,8.94,11.83,11.83,5.09,2.9,11.43,4.35,19.03,4.35,4.99,0,9.59-.55,13.78-1.65,4.19-1.09,7.79-2.85,10.79-5.24,3-2.4,5.09-5.19,6.29-8.39h41.35c-2.6,11.79-7.44,21.47-14.53,29.06-7.09,7.59-15.63,13.14-25.62,16.63-9.99,3.49-20.48,5.24-31.46,5.24-16.58,0-30.67-3.3-42.25-9.89-11.59-6.59-20.48-15.93-26.67-28.01-6.19-12.08-9.29-26.22-9.29-42.4s3.19-30.71,9.59-43c6.39-12.28,15.43-21.92,27.12-28.91,11.69-6.99,25.51-10.49,41.5-10.49,11.98,0,22.52,2,31.61,5.99,9.09,4,16.78,9.59,23.07,16.78,6.29,7.19,10.98,15.53,14.08,25.02,3.09,9.49,4.54,19.73,4.35,30.71,0,2.8-.1,5.5-.3,8.09Z"/>
-            </g>
-          </g>
-          <g>
-            <path className="cxone-logo" d="M272.23.06c-18.93-1.2-34.54,14.41-33.34,33.34.99,15.61,13.66,28.28,29.27,29.27,18.93,1.19,34.54-14.41,33.34-33.34-.99-15.61-13.66-28.28-29.27-29.27"/>
-            <path className="cxone-logo" d="M203.67,19.71h-50.47c-1.67,0-3.01,1.35-3.01,3.01v148.01c0,1.03-1.36,1.39-1.87.5L60.96,21.21c-.54-.93-1.53-1.49-2.6-1.49H3.01c-1.66,0-3.01,1.35-3.01,3.01v245.73c0,1.66,1.35,3.01,3.01,3.01h50.47c1.66,0,3.01-1.35,3.01-3.01V121.04c0-1.02,1.35-1.39,1.87-.5l87.35,149.44c.54.93,1.53,1.49,2.6,1.49h55.36c1.67,0,3.01-1.35,3.01-3.01V22.72c0-1.67-1.35-3.01-3.01-3.01"/>
-            <path className="cxone-logo" d="M292.55,79.21c-7.05,1.52-14.56,2.34-22.36,2.34s-15.3-.82-22.36-2.34c-1.87-.4-3.64,1.02-3.64,2.94v186.31c0,1.66,1.35,3.01,3.01,3.01h45.97c1.66,0,3.01-1.35,3.01-3.01V82.15c0-1.92-1.77-3.34-3.64-2.94"/>
-            <path className="cxone-logo" d="M739.33,225.37h-105.08c-.55,0-1-.45-1-1v-54.72c0-.55.45-1,1-1h85.76c1.66,0,3.01-1.35,3.01-3.01v-40.07c0-1.66-1.35-3.01-3.01-3.01h-85.76c-.55,0-1-.45-1-1v-54.72c0-.55.45-1,1-1h105.08c1.66,0,3.01-1.35,3.01-3.01V22.72c0-1.67-1.35-3.01-3.01-3.01h-159.57c-1.67,0-3.01,1.35-3.01,3.01v245.73c0,1.66,1.35,3.01,3.01,3.01h159.57c1.66,0,3.01-1.35,3.01-3.01v-40.07c0-1.66-1.35-3.01-3.01-3.01"/>
-            <path className="cxone-logo" d="M541.63,178.19h-53.36c-1.44,0-2.7,1.02-2.96,2.44-2.47,13.59-7.12,24.42-13.94,32.5-7.69,9.1-18.56,13.65-32.63,13.65-10.83,0-20.13-3.31-27.92-9.93-7.79-6.61-13.8-15.96-18.02-28.01-4.22-12.06-6.33-26.36-6.33-42.91s2-30.25,6.01-42.55c4-12.29,9.95-21.86,17.86-28.72,7.9-6.86,17.48-10.28,28.74-10.28,12.77,0,23.16,4.26,31.17,12.77,7.01,7.46,11.87,17.46,14.57,29.99.3,1.37,1.53,2.35,2.94,2.35h53.16c1.89,0,3.3-1.72,2.96-3.58-5.29-28.91-16.13-51.27-32.55-67.06-17.21-16.54-41.29-24.82-72.24-24.82-22.52,0-42.11,5.44-58.77,16.31-16.67,10.87-29.5,26.18-38.48,45.92-8.98,19.74-13.47,42.97-13.47,69.67s4.71,51.24,14.12,70.74c9.42,19.5,22.4,34.46,38.96,44.85,16.56,10.4,35.44,15.6,56.66,15.6s38.2-3.9,52.93-11.7c14.72-7.8,26.62-19.09,35.72-33.87,8.52-13.85,14.48-30.46,17.86-49.83.33-1.85-1.08-3.56-2.96-3.56"/>
-          </g>
-        </g>
-      </g>
     </svg>
   );
 }

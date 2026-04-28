@@ -120,12 +120,12 @@ export default function App() {
       <div className="flex flex-1 min-w-0 overflow-hidden">
 
         {/* Icon rail — fixed 52px, never shrinks */}
-        <div className="relative w-[52px] shrink-0 border-r border-[#D2D8DB] bg-white">
+        <div className="relative w-[52px] shrink-0 bg-[#f6f7f9]">
           <AgentSidebarRail activeNavId={activeNavId} onNavSelect={handleNavSelect} />
         </div>
 
         {/* Assignment panel — fixed 232px */}
-        <div className="w-[232px] shrink-0 overflow-hidden">
+        <div className="w-[232px] shrink-0 overflow-hidden py-4 pl-4">
           <AssignmentPanel
             contacts={mockContacts}
             activeContactId={activeContactId}
@@ -135,7 +135,7 @@ export default function App() {
         </div>
 
         {/* Main content: nav page OR resizable panels */}
-        <div ref={panelContainerRef} className="flex-1 min-w-0 overflow-hidden p-4">
+        <div ref={panelContainerRef} className="flex-1 min-w-0 overflow-hidden py-4 pr-4">
           {activeNavId ? (
             <NavRouter navId={activeNavId} className="h-full" />
           ) : activeContact ? (

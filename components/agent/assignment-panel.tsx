@@ -22,7 +22,7 @@ export function AssignmentPanel({
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-white border-r border-[#D2D8DB]",
+        "flex flex-col h-full bg-white border-y border-l border-[#D2D8DB] rounded-l-lg shadow-sm overflow-hidden",
         className
       )}
     >

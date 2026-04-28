@@ -26,7 +26,7 @@ export function InteractionSpace({
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-white border border-[#D2D8DB] rounded-lg shadow-sm overflow-hidden",
+        "flex flex-col h-full bg-white border border-[#D2D8DB] rounded-r-lg shadow-sm overflow-hidden",
         className
       )}
     >
